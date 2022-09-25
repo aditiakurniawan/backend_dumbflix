@@ -5,11 +5,11 @@ import (
 	"dumflix/pkg/mysql"
 	"dumflix/routes"
 	"fmt"
-
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -35,6 +35,7 @@ func main() {
 	var AllowedMethods = handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"})
 	var AllowedOrigins = handlers.AllowedOrigins([]string{"*"})
 
-	fmt.Println("server running localhost:5000")
-	http.ListenAndServe("localhost:5000", handlers.CORS(AllowedHeaders, AllowedMethods, AllowedOrigins)(r))
+	var port = os.Getenv("PORT")
+	fmt.Println("server running :" + port)
+	http.ListenAndServe(":"+port, handlers.CORS(AllowedHeaders, AllowedMethods, AllowedOrigins)(r))
 }
