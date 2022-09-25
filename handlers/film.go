@@ -12,6 +12,9 @@ import (
 	"os"
 	"strconv"
 
+	"context"
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
@@ -36,9 +39,9 @@ func (h *handlerFilm) FindFilms(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(err.Error())
 	}
 
-	for i, p := range films {
-		films[i].Thumbnailfilm = os.Getenv("PATH_FILE") + p.Thumbnailfilm
-	}
+	// for i, p := range films {
+	// 	films[i].Thumbnailfilm = os.Getenv("PATH_FILE") + p.Thumbnailfilm
+	// }
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: films}
@@ -58,7 +61,7 @@ func (h *handlerFilm) GetFilm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	films.Thumbnailfilm = os.Getenv("PATH_FILE") + films.Thumbnailfilm
+	// films.Thumbnailfilm = os.Getenv("PATH_FILE") + films.Thumbnailfilm
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: films}
@@ -74,13 +77,13 @@ func (h *handlerFilm) CreateFilm(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(userId)
 
 	dataContex := r.Context().Value("dataFile")
-	filename := dataContex.(string)
+	filepath := dataContex.(string)
 
 	category_id, _ := strconv.Atoi(r.FormValue("category_id"))
 	request := filmdto.FilmRequest{
 		Title:         r.FormValue("title"),
 		Description:   r.FormValue("description"),
-		Thumbnailfilm: filename,
+		Thumbnailfilm: filepath,
 		Year:          r.FormValue("year"),
 		CategoryID:    category_id,
 		Link:          r.FormValue("Link"),
@@ -95,9 +98,24 @@ func (h *handlerFilm) CreateFilm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var ctx = context.Background()
+	var CLOUD_NAME = os.Getenv("CLOUD_NAME")
+	var API_KEY = os.Getenv("API_KEY")
+	var API_SECRET = os.Getenv("API_SECRET")
+
+	// Add your Cloudinary credentials ...
+	cld, _ := cloudinary.NewFromParams(CLOUD_NAME, API_KEY, API_SECRET)
+
+	// Upload file to Cloudinary ...
+	resp, err := cld.Upload.Upload(ctx, filepath, uploader.UploadParams{Folder: "dumbmerch"})
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	film := models.Film{
 		Title:         request.Title,
-		Thumbnailfilm: filename,
+		Thumbnailfilm: resp.SecureURL,
 		Year:          request.Year,
 		Description:   request.Description,
 		CategoryID:    request.CategoryID,
